@@ -50,7 +50,7 @@ namespace HPlusSport.API.Controllers
                 products = products.Where(p => p.Sku.ToLower().Contains(queryParameters.SearchTerm.ToLower()) ||
                                                p.Name.ToLower().Contains(queryParameters.SearchTerm.ToLower()));
             }
-            
+
 
             if (!string.IsNullOrEmpty(queryParameters.Sku))
             {
@@ -99,6 +99,57 @@ namespace HPlusSport.API.Controllers
                 return NotFound();
             }
             return Ok(product);
+        }
+
+        [HttpPost]
+        public async Task<ActionResult<Product>> PostProduct([FromBody] Product product)
+        {
+            foreach (var item in _context.Products)
+            {
+                if (item.Name.Contains(product.Name))
+                {
+                    return BadRequest();
+                }
+                
+            }
+
+            _context.Products.Add(product);
+            await _context.SaveChangesAsync();
+
+            return CreatedAtAction(
+                "GetProduct",
+                new { id = product.Id },
+                product
+            );
+
+        }
+
+        [HttpPut("{id}")]
+        public async Task<IActionResult> PutProduct([FromRoute] int id, [FromBody] Product product)
+        {
+            if (id != product.Id)
+            {
+                return BadRequest();
+            }
+
+            _context.Entry(product).State = EntityState.Modified;
+
+            try
+            {
+                await _context.SaveChangesAsync();
+            }
+            catch (DbUpdateConcurrencyException)
+            {
+                if (_context.Products.Find(id) == null)
+                {
+                    return NotFound();
+                }
+
+                throw;
+            }
+
+            return NoContent();
+
         }
     }
 }
